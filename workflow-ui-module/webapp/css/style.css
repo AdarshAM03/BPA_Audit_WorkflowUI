@@ -1,0 +1,6 @@
+.editedField .sapMInputBaseInner {
+    background-color: #FFF9C4 !important; /* Light Yellow */
+    border: 2px solid #FBC02D !important; /* Golden Border */
+    font-weight: bold !important;
+    color: #000 !important;
+}

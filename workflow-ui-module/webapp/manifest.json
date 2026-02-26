@@ -1,0 +1,160 @@
+{
+    "_version": "1.26.0",
+    "sap.app": {
+        "id": "bpaaudit.workflowuimodule",
+        "type": "application",
+        "i18n": "i18n/i18n.properties",
+        "applicationVersion": {
+            "version": "0.0.1"
+        },
+        "title": "{{appTitle}}",
+        "description": "{{appDescription}}",
+        "resources": "resources.json",
+        "sourceTemplate": {
+            "id": "@sap/generator-fiori:basic",
+            "version": "1.8.4",
+            "toolsId": "4fe6dd71-8c5b-4235-9117-a921f346dba0"
+        },
+        "dataSources": {
+            "mainService": {
+                "uri": "/sap/opu/odata/",
+                "type": "OData",
+                "settings": {
+                    "annotations": [],
+                    "localUri": "localService/metadata.xml",
+                    "odataVersion": "2.0"
+                }
+            }
+        }
+    },
+    "sap.ui": {
+        "technology": "UI5",
+        "icons": {
+            "icon": "",
+            "favIcon": "",
+            "phone": "",
+            "phone@2": "",
+            "tablet": "",
+            "tablet@2": ""
+        },
+        "deviceTypes": {
+            "desktop": true,
+            "tablet": true,
+            "phone": true
+        }
+    },
+    "sap.ui5": {
+        "flexEnabled": true,
+        "dependencies": {
+            "minUI5Version": "1.82.2",
+            "libs": {
+                "sap.m": {},
+                "sap.ui.core": {},
+                "sap.f": {},
+                "sap.suite.ui.generic.template": {},
+                "sap.ui.comp": {},
+                "sap.ui.generic.app": {},
+                "sap.ui.table": {},
+                "sap.ushell": {}
+            }
+        },
+        "contentDensities": {
+            "compact": true,
+            "cozy": true
+        },
+        "models": {
+            "i18n": {
+                "type": "sap.ui.model.resource.ResourceModel",
+                "settings": {
+                    "bundleName": "bpaaudit.workflowuimodule.i18n.i18n"
+                }
+            },
+            "": {
+                "dataSource": "mainService",
+                "preload": true,
+                "settings": {}
+            }
+        },
+        "resources": {
+            "css": [
+                {
+                    "uri": "css/style.css"
+                }
+            ]
+        },
+        "routing": {
+            "config": {
+                "routerClass": "sap.m.routing.Router",
+                "viewType": "XML",
+                "async": true,
+                "viewPath": "bpaaudit.workflowuimodule.view",
+                "controlAggregation": "pages",
+                "controlId": "app",
+                "clearControlAggregation": false
+            },
+            "routes": [
+                {
+                    "name": "RouteMyTaskUI",
+                    "pattern": ":?query:",
+                    "target": [
+                        "TargetMyTaskUI"
+                    ]
+                }
+            ],
+            "targets": {
+                "TargetMyTaskUI": {
+                    "viewType": "XML",
+                    "transition": "slide",
+                    "clearControlAggregation": false,
+                    "viewId": "MyTaskUI",
+                    "viewName": "MyTaskUI"
+                }
+            }
+        },
+        "rootView": {
+            "viewName": "bpaaudit.workflowuimodule.view.App",
+            "type": "XML",
+            "async": true,
+            "id": "App"
+        }
+    },
+    "sap.cloud": {
+        "public": true,
+        "service": "auditappliaction"
+    },
+    "sap.bpa.task": {
+  "_version": "1.0.0",
+  "category": "approval",
+  "inputs": {
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "title": "Customer Order Product Approval",
+    "type": "object",
+    "required": ["customerID", "name", "email", "phone", "productID", "productName", "price", "category", "orderID", "orderDate", "totalAmount"],
+    "properties": {
+      "customerID": { "type": "integer", "title": "Customer ID" },
+      "name": { "type": "string", "title": "Customer Name" },
+      "email": { "type": "string", "title": "Customer Email" },
+      "phone": { "type": "string", "title": "Customer Phone" },
+      "productID": { "type": "string", "title": "Product ID" },
+      "productName": { "type": "string", "title": "Product Name" },
+      "price": { "type": "number", "title": "Product Price" },
+      "category": { "type": "string", "title": "Product Category" },
+      "orderID": { "type": "string", "title": "Order ID" },
+      "orderDate": { "type": "string", "title": "Order Date" },
+      "quantity": { "type": "integer", "title": "Order Quantity" },
+      "totalAmount": { "type": "number", "title": "Total Amount" }
+    }
+  },
+  "outputs": {
+    "type": "object",
+    "properties": {
+      "approvalStatus": { "type": "string", "title": "Status" },
+      "comment": { "type": "string", "title": "Comment" }
+    }
+  },
+  "outcomes": [
+    { "id": "approve", "label": "Approve" },
+    { "id": "reject", "label": "Reject" }
+  ]
+}
+}
