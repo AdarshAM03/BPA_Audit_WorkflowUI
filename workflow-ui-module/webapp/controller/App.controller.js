@@ -1,38 +1,40 @@
 sap.ui.define(
 	[
-		"sap/ui/core/mvc/Controller"
+		"sap/ui/core/mvc/Controller",
+		"sap/ui/model/json/JSONModel"
 	],
-	function (BaseController) {
+	function (BaseController,JSONModel) {
 		"use strict";
 
 		return BaseController.extend("bpaaudit.workflowuimodule.controller.App", {
 			onInit() {
-				const oComponentData = this.getOwnerComponent().getComponentData();
-				console.log("new code")
+				// 1. Extract Task ID from Component Data
+                const oComponentData = this.getOwnerComponent().getComponentData();
                 if (oComponentData && oComponentData.startupParameters) {
-					console.log("inside if of new code")
                     const startupParams = oComponentData.startupParameters;
                     const taskModel = startupParams.taskModel;
                     const taskId = taskModel.getData().InstanceID;
-
+					console.log(oComponentData)
+					console.log(taskId)
+					
                     // 2. Fetch the Context using Workflow REST API
                     this._fetchWorkflowContext(taskId);
                 }
 
-				var sUrl = "https://spa-api-gateway-bpi-us-prod.cfapps.us10.hana.ondemand.com/workflow/rest/v1/workflow-instances" + taskId + "/context";
+				// var sUrl = "https://spa-api-gateway-bpi-us-prod.cfapps.us10.hana.ondemand.com/workflow/rest/v1/workflow-instances" + taskId + "/context";
 
-				$.ajax({
-					url: sUrl,
-					method: "GET",
-					success: function (oContext) {
+				// $.ajax({
+				// 	url: sUrl,
+				// 	method: "GET",
+				// 	success: function (oContext) {
 
-						var oModel = new sap.ui.model.json.JSONModel(oContext);
-						this.getView().setModel(oModel, "taskContext");
+				// 		var oModel = new sap.ui.model.json.JSONModel(oContext);
+				// 		this.getView().setModel(oModel, "taskContext");
 
-						console.log("Task Context:", oContext);
+				// 		console.log("Task Context:", oContext);
 
-					}.bind(this)
-				});
+				// 	}.bind(this)
+				// });
 
 				//////////////////////////////////
 				
