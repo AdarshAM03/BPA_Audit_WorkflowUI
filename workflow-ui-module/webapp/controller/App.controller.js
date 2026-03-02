@@ -1,122 +1,267 @@
 sap.ui.define(
 	[
 		"sap/ui/core/mvc/Controller",
-		"sap/ui/model/json/JSONModel"
+		"sap/ui/model/json/JSONModel",
+		"sap/m/MessageToast"
 	],
-	function (BaseController,JSONModel) {
+	function (Controller, JSONModel, MessageToast) {
 		"use strict";
 
-		return BaseController.extend("bpaaudit.workflowuimodule.controller.App", {
-			onInit() {
-				// 1. Extract Task ID from Component Data
-                const oComponentData = this.getOwnerComponent().getComponentData();
-                if (oComponentData && oComponentData.startupParameters) {
-                    const startupParams = oComponentData.startupParameters;
-                    const taskModel = startupParams.taskModel;
-                    const taskId = taskModel.getData().InstanceID;
-					console.log(oComponentData)
-					console.log(taskId)
-					
-                    // 2. Fetch the Context using Workflow REST API
-                    this._fetchWorkflowContext(taskId);
-                }
+		return Controller.extend("bpaaudit.workflowuimodule.controller.App", {
 
-				// var sUrl = "https://spa-api-gateway-bpi-us-prod.cfapps.us10.hana.ondemand.com/workflow/rest/v1/workflow-instances" + taskId + "/context";
+			/* =========================================================== */
+			/* ======================= INIT =============================== */
+			/* =========================================================== */
 
-				// $.ajax({
-				// 	url: sUrl,
-				// 	method: "GET",
-				// 	success: function (oContext) {
+			onInit: function () {
 
-				// 		var oModel = new sap.ui.model.json.JSONModel(oContext);
-				// 		this.getView().setModel(oModel, "taskContext");
+				const oComponentData = this.getOwnerComponent().getComponentData();
 
-				// 		console.log("Task Context:", oContext);
+				if (oComponentData && oComponentData.startupParameters) {
 
-				// 	}.bind(this)
-				// });
+					const startupParams = oComponentData.startupParameters;
+					const taskModel = startupParams.taskModel;
+					const taskId = taskModel.getData().InstanceID;
 
-				//////////////////////////////////
-				
-				this._fetchChangeLogs();
-				console.log("init function")
-				const nameID = "_IDGenInput1"
-				const email = "_IDGenInput2"
-				const phone = "_IDGenInput3"
+					console.log("Task ID:", taskId);
+
+					// Step 1: Fetch workflow context
+					this._fetchWorkflowContext(taskId);
+				}
 			},
 
+
+			/* =========================================================== */
+			/* ========== FETCH WORKFLOW CONTEXT ========================= */
+			/* =========================================================== */
+
+			_fetchWorkflowContext: function (taskId) {
+
+				const that = this;
+				const oView = this.getView();
+
+				const sUrl = "/api/workflow/rest/v1/task-instances/" + taskId + "/context";
+
+				$.ajax({
+					url: sUrl,
+					method: "GET",
+					contentType: "application/json",
+					dataType: "json",
+
+					success: function (data) {
+
+						console.log("Workflow Context Retrieved:", data);
+
+						const oContextModel = new JSONModel(data);
+						oView.setModel(oContextModel, "contextModel");
+
+						// ⚠️ Make sure this field contains the workflow instance ID
+						that._sInstanceID = data.phone;
+
+						console.log("Stored InstanceID:", that._sInstanceID);
+
+						// Step 2: Fetch ChangeLogs for this instance
+						that._fetchChangeLogs();
+					},
+
+					error: function (error) {
+						console.error("Error fetching workflow context:", error);
+					}
+				});
+			},
+
+
+			/* =========================================================== */
+			/* ========== FETCH CHANGE LOGS =============================== */
+			/* =========================================================== */
+
 			_fetchChangeLogs: function () {
-				var sUrl = "https://8d0b19adtrial-dev-newloanfeature-srv.cfapps.us10-001.hana.ondemand.com/odata/v4/simple/ChangeLogs";
-				var that = this;
-				console.log("Starting AJAX call...");
+
+				const that = this;
+
+				const sUrl =
+					"https://8d0b19adtrial-dev-newloanfeature-srv.cfapps.us10-001.hana.ondemand.com/odata/v4/simple/ChangeLogs?$filter=BpaInstanceID eq '" +
+					that._sInstanceID + "'";
+
+				console.log("Fetching ChangeLogs for Instance:", that._sInstanceID);
 
 				$.ajax({
 					url: sUrl,
 					method: "GET",
 					dataType: "json",
-					headers: {
-						"Accept": "application/json"
-					},
 
 					success: function (oData) {
-						setTimeout(function () {
 
-							if (!oData || !oData.value) return;
+						if (!oData || !oData.value || oData.value.length === 0) {
+							console.log("No ChangeLogs found");
+							return;
+						}
 
-							var oneMinuteAgo = Date.now() - 60000;
+						console.table(oData.value);
 
-							var aFilteredData = oData.value.filter(function (item) {
-								return new Date(item.createdAt).getTime() > oneMinuteAgo;
-							});
+						// Step 3: Extract customerID
+						const sCustomerID = oData.value[0].customerID;
 
-							console.table(aFilteredData);
+						console.log("Customer ID extracted:", sCustomerID);
 
-							aFilteredData.forEach(function (item) {
+						// Store logs globally
+						that._aChangeLogs = oData.value;
 
-								if (item.field === "name") {
-									that.byId("_IDGenInput1").addStyleClass("highlightField");
-								}
-
-								if (item.field === "email") {
-									that.byId("_IDGenInput2").addStyleClass("highlightField");
-								}
-
-								if (item.field === "phone") {
-									that.byId("_IDGenInput3").addStyleClass("highlightField");
-								}
-
-							});
-
-						}, 500);
+						// Load customer first
+						that._loadCustomerData(sCustomerID);
 					},
 
 					error: function (oError) {
-						console.error("AJAX Fetch Failed:", oError);
+						console.error("Failed to fetch ChangeLogs:", oError);
 					}
 				});
 			},
-			 _fetchWorkflowContext: function (taskId) {
-                const oView = this.getView();
-                
-                // The URL prefix (e.g., /bpmworkflowruntime) depends on your xs-app.json configuration
-                const sUrl = "/api/workflow/rest/v1/task-instances/" + taskId + "/context";
 
-                $.ajax({
-                    url: sUrl,
-                    method: "GET",
-                    contentType: "application/json",
-                    dataType: "json",
-                    success: function (data) {
-                        // 3. Bind the retrieved context to a local JSON model
-                        const oContextModel = new JSONModel(data);
-                        oView.setModel(oContextModel, "contextModel");
-                        console.log("Workflow Context Retrieved:", data);
-                    },
-                    error: function (error) {
-                        console.error("Error fetching workflow context:", error);
-                    }
-                });
-            }
-        });
+
+			/* =========================================================== */
+			/* ========== LOAD CUSTOMER DATA ============================= */
+			/* =========================================================== */
+
+			_loadCustomerData: function (customerID) {
+				const that = this;
+				const oView = this.getView();
+
+				const sUrl =
+					"https://8d0b19adtrial-dev-newloanfeature-srv.cfapps.us10-001.hana.ondemand.com/odata/v4/simple/Customers(customerID="
+					+ customerID +
+					",IsActiveEntity=true)?$expand=customerToproducts,customerToorder";
+
+				console.log("Loading Customer:", customerID);
+
+				$.ajax({
+					url: sUrl,
+					method: "GET",
+					dataType: "json",
+
+					success: function (oCustomer) {
+
+						console.log("Customer Loaded:", oCustomer);
+
+						const oModel = new JSONModel(oCustomer);
+						oView.setModel(oModel, "context");
+						// Wait for UI to render
+						setTimeout(function () {
+							that._applyHighlights();
+						}, 300);
+					},
+
+					error: function (oError) {
+						console.error(oError);
+						MessageToast.show("Failed to load customer");
+					}
+				});
+			},
+			_applyHighlights: function () {
+
+				const that = this;
+
+				if (!this._aChangeLogs) return;
+
+				this._aChangeLogs.forEach(function (item) {
+
+					const field = item.field;
+
+					// 🔹 Customer fields
+					if (field === "name") {
+						that.byId("_IDGenText1").addStyleClass("highlightField");
+					}
+
+					if (field === "email") {
+						that.byId("_IDGenText2").addStyleClass("highlightField");
+					}
+
+					if (field === "phone") {
+						that.byId("_IDGenText3").addStyleClass("highlightField");
+					}
+
+					// 🔹 Product nested fields
+					if (field.startsWith("Product[")) {
+
+						const match = field.match(/Product\[ID:(\d+)\]\.(.+)/);
+
+						if (match) {
+
+							const productID = match[1];
+							const property = match[2];
+
+							that._highlightProductField(productID, property);
+						}
+					}
+					if (field.startsWith("Order[")) {
+
+						const match = field.match(/Order\[ID:([^\]]+)\]\.(.+)/);
+
+						if (match) {
+
+							const orderID = match[1];     // UUID
+							const property = match[2];    // quantity, orderDate, totalAmount
+
+							that._highlightOrderField(orderID, property);
+						}
+					}
+
+				});
+			},
+			_highlightProductField: function (productID, property) {
+
+				const oTable = this.byId("productTable");
+				const aItems = oTable.getItems();
+
+				const columnMap = {
+					productName: 1,
+					price: 2,
+					category: 3
+				};
+
+				aItems.forEach(function (oItem) {
+
+					const cells = oItem.getCells();
+					const currentProductID = cells[0].getText();
+
+					if (String(currentProductID) === String(productID)) {
+
+						const columnIndex = columnMap[property];
+
+						if (columnIndex !== undefined) {
+							cells[columnIndex].addStyleClass("highlightField");
+						}
+					}
+				});
+			},
+			_highlightOrderField: function (orderID, property) {
+
+				const oTable = this.byId("orderTable");
+				const aItems = oTable.getItems();
+
+				const columnMap = {
+					orderDate: 1,
+					quantity: 2,
+					totalAmount: 3
+				};
+
+				aItems.forEach(function (oItem) {
+
+					const cells = oItem.getCells();
+
+					// orderID is first column
+					const currentOrderID = cells[0].getText();
+
+					if (String(currentOrderID) === String(orderID)) {
+
+						const columnIndex = columnMap[property];
+
+						if (columnIndex !== undefined) {
+							cells[columnIndex].addStyleClass("highlightField");
+						}
+					}
+				});
+			},
+
+		});
 	}
 );
