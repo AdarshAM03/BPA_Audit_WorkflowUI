@@ -11,6 +11,12 @@
       "authenticationType": "xsuaa"
     },
     {
+      "source": "^/odata/(.*)$",
+      "target": "/odata/$1",
+      "destination": "newloanfeature-srv",
+      "authenticationType": "xsuaa"
+    },
+    {
       "source": "^/sap/(.*)$",
       "target": "/sap/$1",
       "destination": "None",

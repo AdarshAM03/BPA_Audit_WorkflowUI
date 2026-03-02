@@ -129,7 +129,7 @@
     "$schema": "http://json-schema.org/draft-07/schema",
     "title": "Customer Order Product Approval",
     "type": "object",
-    "required": ["customerID", "name", "email", "phone", "productID", "productName", "price", "category", "orderID", "orderDate", "totalAmount"],
+    "required": ["name", "email", "phone", "productID", "productName", "price", "category", "orderID", "orderDate", "totalAmount"],
     "properties": {
       "customerID": { "type": "integer", "title": "Customer ID" },
       "name": { "type": "string", "title": "Customer Name" },
